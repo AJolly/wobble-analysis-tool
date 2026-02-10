@@ -1,24 +1,36 @@
 import React, { useState } from 'react';
 
 /**
- * Collapsible table showing individual session results
+ * Collapsible table showing nightly (consolidated) or individual session results
  */
-const ResultsTable = ({ results }) => {
+const ResultsTable = ({ results, rawSessions = [] }) => {
   const [showTable, setShowTable] = useState(true);
+  const [viewMode, setViewMode] = useState('nightly'); // 'nightly' or 'individual'
 
-  // Reverse order so newest nights appear first
-  const reversedResults = [...results].reverse();
+  const displayData = viewMode === 'nightly' ? results : rawSessions;
+  // Reverse order so newest appears first
+  const reversedResults = [...displayData].sort((a, b) => b.date - a.date);
 
   return (
     <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 mb-6 border border-white/20">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold text-white">Nightly Results</h3>
-        <button
-          onClick={() => setShowTable(!showTable)}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded transition-colors"
-        >
-          {showTable ? '▲ Hide Table' : '▼ Show Table'}
-        </button>
+        <h3 className="text-xl font-bold text-white">
+          {viewMode === 'nightly' ? 'Nightly Results' : 'Individual Sessions'}
+        </h3>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode(viewMode === 'nightly' ? 'individual' : 'nightly')}
+            className="bg-white/10 hover:bg-white/20 text-white text-sm font-semibold py-2 px-4 rounded transition-colors border border-white/20"
+          >
+            {viewMode === 'nightly' ? 'Show Individual' : 'Show Nightly'}
+          </button>
+          <button
+            onClick={() => setShowTable(!showTable)}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded transition-colors"
+          >
+            {showTable ? '▲ Hide Table' : '▼ Show Table'}
+          </button>
+        </div>
       </div>
 
       {showTable && (
@@ -28,8 +40,8 @@ const ResultsTable = ({ results }) => {
               <thead className="border-b border-white/20">
                 <tr>
                   <th className="text-left py-3 px-4">Date</th>
-                  <th className="text-left py-3 px-4">Filename(s)</th>
-                  <th className="text-center py-3 px-4">Sessions</th>
+                  <th className="text-left py-3 px-4">{viewMode === 'nightly' ? 'Filename(s)' : 'Filename'}</th>
+                  {viewMode === 'nightly' && <th className="text-center py-3 px-4">Sessions</th>}
                   <th className="text-center py-3 px-4">Duration</th>
                   <th className="text-center py-3 px-4">Sleep Disruption</th>
                   <th className="text-center py-3 px-4">Flow Limitation</th>
@@ -48,9 +60,11 @@ const ResultsTable = ({ results }) => {
                         {result.isNap && <span className="ml-2 text-xs bg-yellow-500/30 text-yellow-200 px-2 py-0.5 rounded">NAP</span>}
                       </td>
                       <td className="py-3 px-4 text-xs text-blue-200">{result.filename}</td>
-                      <td className="py-3 px-4 text-center text-sm text-gray-300">
-                        {result.sessionCount || 1}
-                      </td>
+                      {viewMode === 'nightly' && (
+                        <td className="py-3 px-4 text-center text-sm text-gray-300">
+                          {result.sessionCount || 1}
+                        </td>
+                      )}
                       <td className="py-3 px-4 text-center text-sm">
                         {result.durationMinutes >= 60
                           ? `${(result.durationMinutes / 60).toFixed(1)}h`
@@ -69,14 +83,20 @@ const ResultsTable = ({ results }) => {
             </table>
           </div>
           <p className="text-blue-200 text-xs mt-4">
-            Total nights analyzed: {results.length} | You can continue adding more files to expand your dataset
+            {viewMode === 'nightly'
+              ? `Total nights analyzed: ${results.length} | You can continue adding more files to expand your dataset`
+              : `Total sessions: ${rawSessions.length} | You can continue adding more files to expand your dataset`
+            }
           </p>
         </>
       )}
 
       {!showTable && (
         <p className="text-blue-200 text-sm">
-          {results.length} nights analyzed | Click "Show Table" to view individual results
+          {viewMode === 'nightly'
+            ? `${results.length} nights analyzed | Click "Show Table" to view results`
+            : `${rawSessions.length} sessions | Click "Show Table" to view results`
+          }
         </p>
       )}
     </div>
