@@ -28,7 +28,11 @@ export const parseEDF = async (buffer) => {
   if (year < 100) {
     year += (year < 85) ? 2000 : 1900;
   }
-  const recordingDate = new Date(year, parseInt(dateParts[1]) - 1, parseInt(dateParts[0]));
+  const timeParts = header.startTime.split('.');
+  const recordingDate = new Date(
+    year, parseInt(dateParts[1]) - 1, parseInt(dateParts[0]),
+    parseInt(timeParts[0]) || 0, parseInt(timeParts[1]) || 0, parseInt(timeParts[2]) || 0
+  );
 
   offset = 256;
   const signals = [];
