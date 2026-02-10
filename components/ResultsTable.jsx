@@ -4,7 +4,10 @@ import React, { useState } from 'react';
  * Collapsible table showing individual session results
  */
 const ResultsTable = ({ results }) => {
-  const [showTable, setShowTable] = useState(false);
+  const [showTable, setShowTable] = useState(true);
+
+  // Reverse order so newest nights appear first
+  const reversedResults = [...results].reverse();
 
   return (
     <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 mb-6 border border-white/20">
@@ -28,6 +31,7 @@ const ResultsTable = ({ results }) => {
                   <th className="text-left py-3 px-4">Filename(s)</th>
                   <th className="text-center py-3 px-4">Sessions</th>
                   <th className="text-center py-3 px-4">Duration</th>
+                  <th className="text-center py-3 px-4">Sleep Disruption</th>
                   <th className="text-center py-3 px-4">Flow Limitation</th>
                   <th className="text-center py-3 px-4">Regularity</th>
                   <th className="text-center py-3 px-4">Periodicity</th>
@@ -35,28 +39,32 @@ const ResultsTable = ({ results }) => {
                 </tr>
               </thead>
               <tbody>
-                {results.map((result, idx) => (
-                  <tr key={idx} className="border-b border-white/10 hover:bg-white/5">
-                    <td className="py-3 px-4">
-                      {result.date.toLocaleDateString()}
-                      {result.isNap && <span className="ml-2 text-xs bg-yellow-500/30 text-yellow-200 px-2 py-0.5 rounded">NAP</span>}
-                    </td>
-                    <td className="py-3 px-4 text-xs text-blue-200">{result.filename}</td>
-                    <td className="py-3 px-4 text-center text-sm text-gray-300">
-                      {result.sessionCount || 1}
-                    </td>
-                    <td className="py-3 px-4 text-center text-sm">
-                      {result.durationMinutes >= 60
-                        ? `${(result.durationMinutes / 60).toFixed(1)}h`
-                        : `${Math.round(result.durationMinutes)}m`
-                      }
-                    </td>
-                    <td className="py-3 px-4 text-center font-semibold text-orange-300">{result.flScore.toFixed(1)}</td>
-                    <td className="py-3 px-4 text-center font-semibold text-green-300">{result.regularityScore.toFixed(1)}</td>
-                    <td className="py-3 px-4 text-center font-semibold text-blue-300">{result.periodicityIndex.toFixed(1)}</td>
-                    <td className="py-3 px-4 text-center font-semibold text-purple-300">{result.eai.toFixed(1)}</td>
-                  </tr>
-                ))}
+                {reversedResults.map((result, idx) => {
+                  const composite = ((result.flScore + result.periodicityIndex + result.regularityScore) / 3 + result.eai) / 2;
+                  return (
+                    <tr key={idx} className="border-b border-white/10 hover:bg-white/5">
+                      <td className="py-3 px-4">
+                        {result.date.toLocaleDateString()}
+                        {result.isNap && <span className="ml-2 text-xs bg-yellow-500/30 text-yellow-200 px-2 py-0.5 rounded">NAP</span>}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-blue-200">{result.filename}</td>
+                      <td className="py-3 px-4 text-center text-sm text-gray-300">
+                        {result.sessionCount || 1}
+                      </td>
+                      <td className="py-3 px-4 text-center text-sm">
+                        {result.durationMinutes >= 60
+                          ? `${(result.durationMinutes / 60).toFixed(1)}h`
+                          : `${Math.round(result.durationMinutes)}m`
+                        }
+                      </td>
+                      <td className="py-3 px-4 text-center font-semibold text-pink-300">{composite.toFixed(1)}</td>
+                      <td className="py-3 px-4 text-center font-semibold text-orange-300">{result.flScore.toFixed(1)}</td>
+                      <td className="py-3 px-4 text-center font-semibold text-green-300">{result.regularityScore.toFixed(1)}</td>
+                      <td className="py-3 px-4 text-center font-semibold text-blue-300">{result.periodicityIndex.toFixed(1)}</td>
+                      <td className="py-3 px-4 text-center font-semibold text-purple-300">{result.eai.toFixed(1)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

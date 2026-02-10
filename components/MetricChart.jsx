@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush, ReferenceLine } from 'recharts';
 
 /**
@@ -15,9 +15,19 @@ const MetricChart = ({
   yMax,
   comparisonDates = []
 }) => {
+  const [showSmoothed, setShowSmoothed] = useState(true);
+
   return (
     <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 mb-6 border border-white/20">
-      <h3 className="text-xl font-bold text-white mb-4">{title}</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold text-white">{title}</h3>
+        <button
+          onClick={() => setShowSmoothed(!showSmoothed)}
+          className="bg-white/10 hover:bg-white/20 text-white text-sm font-semibold py-2 px-4 rounded transition-colors border border-white/20"
+        >
+          {showSmoothed ? 'Show Raw' : 'Show Smoothed'}
+        </button>
+      </div>
       {description && (
         <p className="text-blue-100 text-xs mb-3">{description}</p>
       )}
@@ -59,8 +69,14 @@ const MetricChart = ({
               />
             );
           })}
-          <Line type="monotone" dataKey={dataKey} stroke={`${color}22`} strokeWidth={1} dot={false} name="Raw" />
-          <Line type="monotone" dataKey={smoothDataKey} stroke={color} strokeWidth={3} dot={false} name="Smoothed" />
+          {showSmoothed ? (
+            <>
+              <Line type="monotone" dataKey={dataKey} stroke={`${color}22`} strokeWidth={1} dot={false} name="Raw" />
+              <Line type="monotone" dataKey={smoothDataKey} stroke={color} strokeWidth={3} dot={false} name="Smoothed" />
+            </>
+          ) : (
+            <Line type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} dot={false} name="Raw" />
+          )}
           <Brush dataKey="date" height={30} stroke={color} fill="#1e293b" />
         </LineChart>
       </ResponsiveContainer>
