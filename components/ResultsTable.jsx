@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
 
+const formatTime = (date) => {
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+};
+
+const getEndDate = (date, durationMinutes) => {
+  return new Date(date.getTime() + durationMinutes * 60 * 1000);
+};
+
 /**
  * Collapsible table showing nightly (consolidated) or individual session results
  */
@@ -63,6 +71,7 @@ const ResultsTable = ({ results, rawSessions = [], ignoreFirstNinety = false }) 
               <thead className="border-b border-white/20">
                 <tr>
                   <th className="text-left py-3 px-4">Date</th>
+                  <th className="text-center py-3 px-4">Time</th>
                   <th className="text-left py-3 px-4">{viewMode === 'nightly' ? 'Filename(s)' : 'Filename'}</th>
                   {viewMode === 'nightly' && <th className="text-center py-3 px-4">Sessions</th>}
                   <th className="text-center py-3 px-4">Duration</th>
@@ -81,11 +90,15 @@ const ResultsTable = ({ results, rawSessions = [], ignoreFirstNinety = false }) 
                   const eai = getVal(result, 'eai');
                   const dur = getDur(result);
                   const composite = ((fl + pi + rs) / 3 + eai) / 2;
+                  const endDate = getEndDate(result.date, result.durationMinutes);
                   return (
                     <tr key={idx} className="border-b border-white/10 hover:bg-white/5">
                       <td className="py-3 px-4">
                         {result.date.toLocaleDateString()}
                         {result.isNap && <span className="ml-2 text-xs bg-yellow-500/30 text-yellow-200 px-2 py-0.5 rounded">NAP</span>}
+                      </td>
+                      <td className="py-3 px-4 text-center text-xs text-gray-300 whitespace-nowrap">
+                        {formatTime(result.date)} – {formatTime(endDate)}
                       </td>
                       <td className="py-3 px-4 text-xs text-blue-200">{result.filename}</td>
                       {viewMode === 'nightly' && (
@@ -115,6 +128,9 @@ const ResultsTable = ({ results, rawSessions = [], ignoreFirstNinety = false }) 
               ? `Total nights analyzed: ${results.length} | You can continue adding more files to expand your dataset`
               : `Total sessions: ${filteredRawSessions.length}${ignoreFirstNinety && filteredRawSessions.length < rawSessions.length ? ` (${rawSessions.length - filteredRawSessions.length} too short to trim)` : ''} | You can continue adding more files to expand your dataset`
             }
+          </p>
+          <p className="text-gray-400 text-xs mt-1">
+            Note: Dates shown are based on EDF recording start time. Sessions starting after midnight appear as the next day here, while OSCAR/ResMed report them under the previous evening's date.
           </p>
         </>
       )}
