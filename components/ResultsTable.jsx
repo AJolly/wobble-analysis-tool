@@ -3,13 +3,36 @@ import React, { useState } from 'react';
 /**
  * Collapsible table showing nightly (consolidated) or individual session results
  */
-const ResultsTable = ({ results, rawSessions = [] }) => {
+const ResultsTable = ({ results, rawSessions = [], ignoreFirstNinety = false }) => {
   const [showTable, setShowTable] = useState(true);
   const [viewMode, setViewMode] = useState('nightly'); // 'nightly' or 'individual'
 
-  const displayData = viewMode === 'nightly' ? results : rawSessions;
+  // For individual view with trimmed mode, filter out sessions without trimmed data
+  const filteredRawSessions = ignoreFirstNinety
+    ? rawSessions.filter(s => s.trimmed_flScore != null)
+    : rawSessions;
+
+  const displayData = viewMode === 'nightly' ? results : filteredRawSessions;
   // Reverse order so newest appears first
   const reversedResults = [...displayData].sort((a, b) => b.date - a.date);
+
+  const getVal = (result, key) => {
+    // For nightly view, consolidation already picked the right scores
+    if (viewMode === 'nightly') return result[key];
+    // For individual view, use trimmed scores when toggle is on
+    if (ignoreFirstNinety && result[`trimmed_${key}`] != null) {
+      return result[`trimmed_${key}`];
+    }
+    return result[key];
+  };
+
+  const getDur = (result) => {
+    if (viewMode === 'nightly') return result.durationMinutes;
+    if (ignoreFirstNinety && result.trimmed_durationMinutes != null) {
+      return result.trimmed_durationMinutes;
+    }
+    return result.durationMinutes;
+  };
 
   return (
     <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 mb-6 border border-white/20">
@@ -52,7 +75,12 @@ const ResultsTable = ({ results, rawSessions = [] }) => {
               </thead>
               <tbody>
                 {reversedResults.map((result, idx) => {
-                  const composite = ((result.flScore + result.periodicityIndex + result.regularityScore) / 3 + result.eai) / 2;
+                  const fl = getVal(result, 'flScore');
+                  const pi = getVal(result, 'periodicityIndex');
+                  const rs = getVal(result, 'regularityScore');
+                  const eai = getVal(result, 'eai');
+                  const dur = getDur(result);
+                  const composite = ((fl + pi + rs) / 3 + eai) / 2;
                   return (
                     <tr key={idx} className="border-b border-white/10 hover:bg-white/5">
                       <td className="py-3 px-4">
@@ -66,16 +94,16 @@ const ResultsTable = ({ results, rawSessions = [] }) => {
                         </td>
                       )}
                       <td className="py-3 px-4 text-center text-sm">
-                        {result.durationMinutes >= 60
-                          ? `${(result.durationMinutes / 60).toFixed(1)}h`
-                          : `${Math.round(result.durationMinutes)}m`
+                        {dur >= 60
+                          ? `${(dur / 60).toFixed(1)}h`
+                          : `${Math.round(dur)}m`
                         }
                       </td>
                       <td className="py-3 px-4 text-center font-semibold text-pink-300">{composite.toFixed(1)}</td>
-                      <td className="py-3 px-4 text-center font-semibold text-orange-300">{result.flScore.toFixed(1)}</td>
-                      <td className="py-3 px-4 text-center font-semibold text-green-300">{result.regularityScore.toFixed(1)}</td>
-                      <td className="py-3 px-4 text-center font-semibold text-blue-300">{result.periodicityIndex.toFixed(1)}</td>
-                      <td className="py-3 px-4 text-center font-semibold text-purple-300">{result.eai.toFixed(1)}</td>
+                      <td className="py-3 px-4 text-center font-semibold text-orange-300">{fl.toFixed(1)}</td>
+                      <td className="py-3 px-4 text-center font-semibold text-green-300">{rs.toFixed(1)}</td>
+                      <td className="py-3 px-4 text-center font-semibold text-blue-300">{pi.toFixed(1)}</td>
+                      <td className="py-3 px-4 text-center font-semibold text-purple-300">{eai.toFixed(1)}</td>
                     </tr>
                   );
                 })}
@@ -85,7 +113,7 @@ const ResultsTable = ({ results, rawSessions = [] }) => {
           <p className="text-blue-200 text-xs mt-4">
             {viewMode === 'nightly'
               ? `Total nights analyzed: ${results.length} | You can continue adding more files to expand your dataset`
-              : `Total sessions: ${rawSessions.length} | You can continue adding more files to expand your dataset`
+              : `Total sessions: ${filteredRawSessions.length}${ignoreFirstNinety && filteredRawSessions.length < rawSessions.length ? ` (${rawSessions.length - filteredRawSessions.length} too short to trim)` : ''} | You can continue adding more files to expand your dataset`
             }
           </p>
         </>
@@ -95,7 +123,7 @@ const ResultsTable = ({ results, rawSessions = [] }) => {
         <p className="text-blue-200 text-sm">
           {viewMode === 'nightly'
             ? `${results.length} nights analyzed | Click "Show Table" to view results`
-            : `${rawSessions.length} sessions | Click "Show Table" to view results`
+            : `${filteredRawSessions.length} sessions | Click "Show Table" to view results`
           }
         </p>
       )}
